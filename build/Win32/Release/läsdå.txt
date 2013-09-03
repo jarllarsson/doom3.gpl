@@ -1,0 +1,1 @@
+kopiera server.cfg till Dedicated Release/base
