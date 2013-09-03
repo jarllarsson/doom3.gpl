@@ -4696,6 +4696,8 @@ static classVariableInfo_t gameReturn_t_typeInfo[] = {
 };
 
 static classVariableInfo_t idGame_typeInfo[] = {
+	{ "bool", "dv2549ProtocolTraced", (int)(&((idGame *)0)->dv2549ProtocolTraced), sizeof( ((idGame *)0)->dv2549ProtocolTraced ) },
+	{ "bool", "dv2549AgentActivated", (int)(&((idGame *)0)->dv2549AgentActivated), sizeof( ((idGame *)0)->dv2549AgentActivated ) },
 	{ NULL, 0 }
 };
 

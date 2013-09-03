@@ -26,3 +26,5 @@ base
 *.log
 
 *.manifest
+
+*.unsuccessfulbuild

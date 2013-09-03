@@ -938,7 +938,11 @@ void idAsyncClient::ReadLocalizedServerString( const idBitMsg &msg, char *out, i
 idAsyncClient::ProcessReliableServerMessages
 ==================
 */
-void idAsyncClient::ProcessReliableServerMessages( void ) {
+void idAsyncClient::ProcessReliableServerMessages( void ) 
+{
+	if (game->dv2549ProtocolTraced)
+		common->Printf("\nDV2549_RCV_ASY|");
+
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 	byte		id;
@@ -979,6 +983,7 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 					cvarSystem->ClearModifiedFlags( CVAR_USERINFO ); // don't emit back
 				}
 				game->SetUserInfo( clientNum, info, true, false );
+
 				break;
 			}
 			case SERVER_RELIABLE_MESSAGE_SYNCEDCVARS: {
