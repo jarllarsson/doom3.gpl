@@ -5,15 +5,14 @@ cd ..
 7za d .\base\game00.zip *.dll
 7za a .\base\game00.zip gamex86.dll
 cd base
-del game00.pk4
+::del game00.pk4
 rename game00.zip game00.pk4
 xcopy /y game00.pk4 "..\..\Dedicated Release\base"
-del gamex86.dll
+::del gamex86.dll
 cd ..
-del gamex86.dll
-cd ../Dedicated Release/
-del gamex86.dll
-cd base
-del gamex86.dll
-cd ../../Release/
-timeout /T 1
+::del gamex86.dll
+::cd ../Dedicated Release/
+::del gamex86.dll
+::cd base
+::del gamex86.dll
+::cd ../../Release/

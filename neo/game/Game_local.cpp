@@ -153,13 +153,13 @@ void idGameLocal::DV2549ProtocolTrace(const char* text)
 {
 	if (strcmp(text,"ProtocolHide")==0)
 	{
-		dv2549ProtocolTraced = true;
-		common->Printf("DV2549_PROTOCOL: hidden");
+		dv2549ProtocolTraced = false;
+		common->Printf("DV2549_PROTOCOL: trace off");
 	}
 	else if (strcmp(text,"ProtocolTrace")==0)
 	{
-		dv2549ProtocolTraced = false;
-		common->Printf("DV2549_PROTOCOL: traced");
+		dv2549ProtocolTraced = true;
+		common->Printf("DV2549_PROTOCOL: trace on");
 	}
 }
 
