@@ -106,9 +106,6 @@
     <Filter Include="Ui">
       <UniqueIdentifier>{b3166d25-0562-49da-bc8d-961006fe1785}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Framework\Async\JarlStuff">
-      <UniqueIdentifier>{467c2f19-9af5-4139-850c-9aaf9274694c}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -623,9 +620,6 @@
     </ClInclude>
     <ClInclude Include="ui\Winvar.h">
       <Filter>Ui</Filter>
-    </ClInclude>
-    <ClInclude Include="JLTrafficDatLog.h">
-      <Filter>Framework\Async\JarlStuff</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1828,9 +1822,6 @@
     </ClCompile>
     <ClCompile Include="ui\Winvar.cpp">
       <Filter>Ui</Filter>
-    </ClCompile>
-    <ClCompile Include="JLTrafficDatLog.cpp">
-      <Filter>Framework\Async\JarlStuff</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

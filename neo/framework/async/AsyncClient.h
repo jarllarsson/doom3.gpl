@@ -78,6 +78,8 @@ private:
 	// #####################
 	// BY JARL LARSSON
 	void				DV2549MeasureSystem(void);
+	void				DV2549AddRoundTimeMeasure(void);
+	idList<float>		m_roundTripTimes;
 public:
 						idAsyncClient();
 

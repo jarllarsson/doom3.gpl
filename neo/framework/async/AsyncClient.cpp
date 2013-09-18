@@ -1924,7 +1924,7 @@ void idAsyncClient::RunFrame( void ) {
 
 
 // #####################
-	// BY JARL LARSSON
+// BY JARL LARSSON
 /*
 ==================
 idAsyncClient::DV2549MeasureSystem
@@ -1933,8 +1933,19 @@ idAsyncClient::DV2549MeasureSystem
 void idAsyncClient::DV2549MeasureSystem( void ) 
 {
 	common->Printf("\nPckt Loss: %f",GetIncomingPacketLoss());
+	common->Printf("sz: %d",m_roundTripTimes.Num());
 }
+/*
+==================
+idAsyncClient::DV2549AddRoundTimeMeasure
+==================
+*/
 
+void idAsyncClient::DV2549AddRoundTimeMeasure( void )
+{
+	common->Printf("\nPckt Loss: %f",GetIncomingPacketLoss());
+	common->Printf("sz: %d",m_roundTripTimes.Num());
+}
 
 
 
