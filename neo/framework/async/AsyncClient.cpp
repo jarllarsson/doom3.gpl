@@ -1932,7 +1932,7 @@ idAsyncClient::DV2549MeasureSystem
 */
 void idAsyncClient::DV2549MeasureSystem( void ) 
 {
-	common->Printf("Pckt Loss: %f",GetIncomingPacketLoss());
+	common->Printf("\nPckt Loss: %f",GetIncomingPacketLoss());
 }
 
 
