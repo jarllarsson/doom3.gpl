@@ -1890,6 +1890,10 @@ void idAsyncClient::RunFrame( void ) {
 		// send the user commands of this client to the server
 		SendUsercmdsToServer();
 
+		// ########################
+		// 
+		DV2549MeasureSystem();
+
 		// update time
 		gameFrame++;
 		gameTime += USERCMD_MSEC;
@@ -1916,6 +1920,25 @@ void idAsyncClient::RunFrame( void ) {
 		}
 	}
 }
+
+
+
+// #####################
+	// BY JARL LARSSON
+/*
+==================
+idAsyncClient::DV2549MeasureSystem
+==================
+*/
+void idAsyncClient::DV2549MeasureSystem( void ) 
+{
+	common->Printf("Pckt Loss: %f",GetIncomingPacketLoss());
+}
+
+
+
+
+
 
 /*
 ==================

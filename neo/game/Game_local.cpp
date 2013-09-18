@@ -2196,6 +2196,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	idPlayer	*player;
 	const renderView_t *view;
 
+
 #ifdef _DEBUG
 	if ( isMultiplayer ) {
 		assert( !isClient );

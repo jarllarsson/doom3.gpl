@@ -74,6 +74,10 @@ typedef struct {
 } pakDlEntry_t;
 
 class idAsyncClient {
+private:
+	// #####################
+	// BY JARL LARSSON
+	void				DV2549MeasureSystem(void);
 public:
 						idAsyncClient();
 
