@@ -38,8 +38,8 @@ const int EMPTY_RESEND_TIME				= 500;
 const int PREDICTION_FAST_ADJUST		= 4;
 
 // BY JARL LARSSON
-const int JL_MEASURE_SEND_TIME				= 100;
-const int JL_PKGLOSS_SEND_TIME				= 10;
+const int JL_MEASURE_SEND_TIME				= 10;
+const int JL_PKGLOSS_SEND_TIME				= 2;
 const int JL_MEASURE_END_TIMEOUT			= 3000;
 const int JL_MEASURE_MAXTIME				= 1000*60*5;
 
@@ -256,6 +256,42 @@ void idAsyncClient::ConnectToServer( const char *address ) {
 			return;
 		}
 	}
+	if ( !adr.port ) {
+		adr.port = PORT_SERVER;
+	}
+
+	common->Printf( "\"%s\" resolved to %s\n", address, Sys_NetAdrToString( adr ) );
+
+	ConnectToServer( adr );
+}
+
+/*
+==================
+idAsyncClient::ConnectToServerLAN
+==================
+*/
+void idAsyncClient::ConnectToServerLAN( const char *address ) {
+	int serverNum;
+	netadr_t adr;
+
+	for (int i=0;i<serverList.Num();i++)
+	{
+		const char *current =serverList[i].serverInfo.GetString( "si_name" );
+		if (strcmp(current,address)==0)
+		{
+			adr = serverList[ i ].adr;
+			break;
+		}
+	}
+
+// 	if ( idStr::IsNumeric( address ) ) {
+// 		serverNum = atoi( address );
+// 		if ( serverNum < 0 || serverNum >= serverList.Num() ) {
+// 			session->MessageBox( MSG_OK, va( common->GetLanguageDict()->GetString( "#str_06733" ), serverNum ), common->GetLanguageDict()->GetString( "#str_06735" ), true );
+// 			return;
+// 		}
+// 		adr = serverList[ serverNum ].adr;
+// 	}
 	if ( !adr.port ) {
 		adr.port = PORT_SERVER;
 	}

@@ -1,0 +1,1 @@
+START "DOOM" "DOOM3.exe" +disconnect +developer "1" +exec "default.cfg"

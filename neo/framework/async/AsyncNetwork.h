@@ -226,6 +226,7 @@ private:
 	static void				Kick_f( const idCmdArgs &args );
 	static void				CheckNewVersion_f( const idCmdArgs &args );
 	static void				UpdateUI_f( const idCmdArgs &args );
+	static void ConnectLAN_f( const idCmdArgs &args );
 };
 
 #endif /* !__ASYNCNETWORK_H__ */

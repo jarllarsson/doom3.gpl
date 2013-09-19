@@ -266,6 +266,8 @@ private:
 	bool				CheckTimeout( void );
 	void				ProcessDownloadInfoMessage( const netadr_t from, const idBitMsg &msg );
 	int					GetDownloadRequest( const int checksums[ MAX_PURE_PAKS ], int count, int gamePakChecksum );
+public:
+	void ConnectToServerLAN( const char *address );
 };
 
 #endif /* !__ASYNCCLIENT_H__ */

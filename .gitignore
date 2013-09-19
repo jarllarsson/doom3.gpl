@@ -1,4 +1,3 @@
-base
 *.user
 *.opensdf
 *.sdf
@@ -30,3 +29,8 @@ base
 *.unsuccessfulbuild
 
 *.db
+*.pk4
+doomkey
+xpkey
+*.spec
+/build/Win32/Release/base/*.txt

@@ -1394,7 +1394,7 @@ void idAsyncServer::ProcessReliableClientMessages( int clientNum ) {
 				break;
 			}
 			case CLIENT_RELIABLE_MESSAGE_AGENTACTIVATED: {
-				DV2549BroadcastAgentActivate(clientNum);
+				//DV2549BroadcastAgentActivate(clientNum);
 				break;
 			}
 			default: {

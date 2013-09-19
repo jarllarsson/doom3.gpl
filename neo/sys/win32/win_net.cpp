@@ -1093,6 +1093,7 @@ bool idTCP::Init( const char *host, short port ) {
 	unsigned long	_true = 1;
 	struct sockaddr sadr;
 
+
 	if ( !Sys_StringToNetAdr( host, &address, true ) ) {
 		common->Printf( "Couldn't resolve server name \"%s\"\n", host );
 		return false;

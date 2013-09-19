@@ -101,6 +101,7 @@ void idAsyncNetwork::Init( void ) {
 	cmdSystem->AddCommand( "reconnect", Reconnect_f, CMD_FL_SYSTEM, "reconnect to the last server we tried to connect to" );
 	cmdSystem->AddCommand( "serverInfo", GetServerInfo_f, CMD_FL_SYSTEM, "shows server info" );
 	cmdSystem->AddCommand( "LANScan", GetLANServers_f, CMD_FL_SYSTEM, "scans LAN for servers" );
+	cmdSystem->AddCommand( "connectLAN", ConnectLAN_f, CMD_FL_SYSTEM, "connects to a LAN server" );
 	cmdSystem->AddCommand( "listServers", ListServers_f, CMD_FL_SYSTEM, "lists scanned servers" );
 	cmdSystem->AddCommand( "rcon", RemoteConsole_f, CMD_FL_SYSTEM, "sends remote console command to server" );
 	cmdSystem->AddCommand( "heartbeat", Heartbeat_f, CMD_FL_SYSTEM, "send a heartbeat to the the master servers" );
@@ -354,6 +355,24 @@ void idAsyncNetwork::Connect_f( const idCmdArgs &args ) {
 	}
 	com_asyncInput.SetBool( false );
 	client.ConnectToServer( args.Argv( 1 ) );
+}
+
+/*
+==================
+idAsyncNetwork::Connect_f
+==================
+*/
+void idAsyncNetwork::ConnectLAN_f( const idCmdArgs &args ) {
+	if ( server.IsActive() ) {
+		common->Printf( "already running a server\n" );
+		return;
+	}
+	if ( args.Argc() != 2 ) {
+		common->Printf( "USAGE: connectLAN <serverName>\n" );
+		return;
+	}
+	com_asyncInput.SetBool( false );
+	client.ConnectToServerLAN( args.Argv( 1 ) );
 }
 
 /*
