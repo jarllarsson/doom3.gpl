@@ -91,8 +91,10 @@ private:
 	// Add a round trip measurement to list
 	void				DV2549AddRoundTimeMeasure(const idBitMsg &msg);
 	void				DV2549AddPacketVolumeAck();
+	void				DV2549RemoteActivate();
 
 	// Send round trip message from client to server
+	void				DV2549SendAgentActivatedMsgFromClient(void);
 	void				DV2549SendRoundtripMsgFromClient(void);
 	void				DV2549SendPacketLossCheckMsgFromClient(void);
 
@@ -101,11 +103,20 @@ private:
 	idList<int>			m_rttServerProcTimes;
 	idList<int>			m_rttClientProcTimes;
 	idList<float>		m_jitterWorkData;
+
+// if optimizing to avoid some buffers, implement these:
+// 	int					m_rttTimesAcc;
+// 	int					m_clProcTimesAcc;
+// 	int					m_srvProcTimesAcc;
+// 	int					m_eeTimesAcc;
+
+	int					m_calcStartTime;
 	int					m_sentPacketLossChecks;
 	int					m_packetLossCheckAcks;
 	int					m_lastRoundtripMsgTime; // last time a roundtrip message was sent
 	int					m_lastPkgLossMsgTime;
 	int					m_lastMeasurement; // grace period after measurement stop has been issued
+	int					m_calcPhaseTimeBefore;
 	bool				m_measurementRunning;
 	bool				m_calcPhase;
 

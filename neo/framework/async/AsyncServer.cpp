@@ -1393,6 +1393,10 @@ void idAsyncServer::ProcessReliableClientMessages( int clientNum ) {
 				DV2549RespondRoundtripMsg(clientNum, msg, procStartTimestamp);
 				break;
 			}
+			case CLIENT_RELIABLE_MESSAGE_AGENTACTIVATED: {
+				DV2549BroadcastAgentActivate(clientNum);
+				break;
+			}
 			default: {
 				// pass reliable message on to game code
 				game->ServerProcessReliableMessage( clientNum, msg );
@@ -2857,13 +2861,13 @@ void idAsyncServer::DV2549RespondRoundtripMsg( int clientNum, const idBitMsg &ms
 		}
 		return;
 	}
-
-	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-		if ( clients[i].clientState != SCS_INGAME ) {
-			continue;
-		}
-		SendReliableMessage( i, outMsg );
-	}
+// 
+// 	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
+// 		if ( clients[i].clientState != SCS_INGAME ) {
+// 			continue;
+// 		}
+// 		SendReliableMessage( i, outMsg );
+// 	}
 }
 
 void idAsyncServer::DV2549RespondPacketVolume( int clientNum )
@@ -2874,7 +2878,7 @@ void idAsyncServer::DV2549RespondPacketVolume( int clientNum )
 
 	outMsg.Init( msgBuf, sizeof( msgBuf ) );
 	outMsg.WriteByte( SERVER_RELIABLE_MESSAGE_PKGLOSSMSGACK);
-	outMsg.WriteLong( 1337 );
+	//outMsg.WriteLong( 1337 );
 
 	if ( clientNum >= 0 && clientNum < MAX_ASYNC_CLIENTS ) {
 		if ( clients[clientNum].clientState == SCS_INGAME ) {
@@ -2882,11 +2886,38 @@ void idAsyncServer::DV2549RespondPacketVolume( int clientNum )
 		}
 		return;
 	}
+// 
+// 	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
+// 		if ( clients[i].clientState != SCS_INGAME ) {
+// 			continue;
+// 		}
+// 		SendReliableMessage( i, outMsg );
+// 	}
+}
+
+void idAsyncServer::DV2549BroadcastAgentActivate( int exceptClientNum )
+{
+	int			i;
+	idBitMsg	outMsg;
+	byte		msgBuf[MAX_MESSAGE_SIZE];
+
+	outMsg.Init( msgBuf, sizeof( msgBuf ) );
+	outMsg.WriteByte( SERVER_RELIABLE_MESSAGE_REMOTEAGENTACTIVATE);
+// 
+// 	if ( clientNum >= 0 && clientNum < MAX_ASYNC_CLIENTS ) {
+// 		if ( clients[clientNum].clientState == SCS_INGAME ) {
+// 			SendReliableMessage( clientNum, outMsg );
+// 		}
+// 		return;
+// 	}
+
+	common->Printf("\nBroadcasting agent activation.\n");
 
 	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-		if ( clients[i].clientState != SCS_INGAME ) {
+		if ( clients[i].clientState != SCS_INGAME || i==exceptClientNum) {
 			continue;
 		}
+		common->Printf("\nActivating agent on client %d \n",i);
 		SendReliableMessage( i, outMsg );
 	}
 }
