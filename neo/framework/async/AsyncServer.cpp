@@ -1336,6 +1336,11 @@ void idAsyncServer::ProcessUnreliableClientMessage( int clientNum, const idBitMs
 			}
 			break;
 		}
+		case CLIENT_UNRELIABLE_MESSAGE_PKGLOSSCHECK: {
+			// ADDED BY JARL LARSSON
+			DV2549RespondPacketVolume(clientNum);
+			break;
+		}
 		default: {
 			common->Printf( "unknown unreliable message %d from client %d\n", id, clientNum );
 			break;
@@ -2845,6 +2850,31 @@ void idAsyncServer::DV2549RespondRoundtripMsg( int clientNum, const idBitMsg &ms
 	outMsg.WriteByte( SERVER_RELIABLE_MESSAGE_ROUNDTRIPCONCLUDE);
 	outMsg.WriteLong( msg.ReadLong() );
 	outMsg.WriteLong( Sys_Milliseconds()-realTime);
+
+	if ( clientNum >= 0 && clientNum < MAX_ASYNC_CLIENTS ) {
+		if ( clients[clientNum].clientState == SCS_INGAME ) {
+			SendReliableMessage( clientNum, outMsg );
+		}
+		return;
+	}
+
+	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
+		if ( clients[i].clientState != SCS_INGAME ) {
+			continue;
+		}
+		SendReliableMessage( i, outMsg );
+	}
+}
+
+void idAsyncServer::DV2549RespondPacketVolume( int clientNum )
+{
+	int			i;
+	idBitMsg	outMsg;
+	byte		msgBuf[MAX_MESSAGE_SIZE];
+
+	outMsg.Init( msgBuf, sizeof( msgBuf ) );
+	outMsg.WriteByte( SERVER_RELIABLE_MESSAGE_PKGLOSSMSGACK);
+	outMsg.WriteLong( 1337 );
 
 	if ( clientNum >= 0 && clientNum < MAX_ASYNC_CLIENTS ) {
 		if ( clients[clientNum].clientState == SCS_INGAME ) {

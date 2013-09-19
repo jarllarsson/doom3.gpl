@@ -133,6 +133,7 @@ private:
 	// #####################################
 	// ADDED BY JARL LARSSON
 	void				DV2549RespondRoundtripMsg( int clientNum, const idBitMsg &msg, int p_serverRcvTimestamp );
+	void				DV2549RespondPacketVolume( int clientNum );
 public:
 						idAsyncServer();
 

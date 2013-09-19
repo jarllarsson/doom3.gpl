@@ -90,22 +90,30 @@ private:
 
 	// Add a round trip measurement to list
 	void				DV2549AddRoundTimeMeasure(const idBitMsg &msg);
+	void				DV2549AddPacketVolumeAck();
 
 	// Send round trip message from client to server
 	void				DV2549SendRoundtripMsgFromClient(void);
+	void				DV2549SendPacketLossCheckMsgFromClient(void);
 
 	// cust data
 	idList<int>			m_roundTripTimes; // all measured round trip times
 	idList<int>			m_rttServerProcTimes;
 	idList<int>			m_rttClientProcTimes;
+	idList<float>		m_jitterWorkData;
+	int					m_sentPacketLossChecks;
+	int					m_packetLossCheckAcks;
 	int					m_lastRoundtripMsgTime; // last time a roundtrip message was sent
+	int					m_lastPkgLossMsgTime;
+	int					m_lastMeasurement; // grace period after measurement stop has been issued
 	bool				m_measurementRunning;
+	bool				m_calcPhase;
 
 	// final data
-	float				m_rttResult;
-	float				m_delayResult;
-	float				m_jitterResult;
-	float				m_packetVolResult;
+	float				m_rttResultAvg;
+	float				m_delayResultAvg;
+	float				m_jitterResultSd;
+	float				m_packetVolResultPrcnt;
 
 
 public:

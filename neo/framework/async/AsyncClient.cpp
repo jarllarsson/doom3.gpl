@@ -38,8 +38,9 @@ const int EMPTY_RESEND_TIME				= 500;
 const int PREDICTION_FAST_ADJUST		= 4;
 
 // BY JARL LARSSON
-const int JL_MEASURE_SEND_TIME				= 100;
-
+const int JL_MEASURE_SEND_TIME				= 50;
+const int JL_PKGLOSS_SEND_TIME				= 10;
+const int JL_MEASURE_END_TIMEOUT			= 3000;
 
 /*
 ==================
@@ -95,6 +96,7 @@ void idAsyncClient::Clear( void ) {
 
 	// JARL
 	m_lastRoundtripMsgTime=0;
+	m_lastPkgLossMsgTime=0;
 	DV2549CleanUpMeasurementBuffers();
 }
 
@@ -1077,6 +1079,11 @@ void idAsyncClient::ProcessReliableServerMessages( void )
 				if (game->dv2549ProtocolTraced) common->Printf("SERVER_RELIABLE_MESSAGE_ROUNDTRIPCONCLUDE|");
 				break;
 				}
+			case SERVER_RELIABLE_MESSAGE_PKGLOSSMSGACK: {
+				DV2549AddPacketVolumeAck();
+				if (game->dv2549ProtocolTraced) common->Printf("SERVER_RELIABLE_MESSAGE_PKGLOSSMSGACK|");
+				break;
+			}
 			default: {
 				// pass reliable message on to game code
 				game->ClientProcessReliableMessage( clientNum, msg );
@@ -1949,30 +1956,41 @@ idAsyncClient::DV2549MeasureSystem
 */
 void idAsyncClient::DV2549RunMeasureSystem( void ) 
 {
-	if (game->dv2549AgentActivated)
+	if (!m_calcPhase && game->dv2549AgentActivated)
 	{
 		m_measurementRunning=true;
-		common->Printf("\nAGENT|Pckt Loss: %f",GetIncomingPacketLoss());
 		common->Printf("\nAGENT|RTT buffer sz: %d",m_roundTripTimes.Num());
 
 		// LISTEN +?
 
 		// SEND
 		DV2549SendRoundtripMsgFromClient();
+		DV2549SendPacketLossCheckMsgFromClient();
+		m_lastMeasurement=realTime;
 	}
 	else if (m_measurementRunning)
 	{
-		// Finish
-		m_measurementRunning=false;
-		// Calc
-		DV2549CalcRTTMeasurements();		
-		DV2549CalcEndEndDelayMeasurements();
-		DV2549CalcPacketVolMeasurements();
-		DV2549CalcJitterMeasurements();
-		// Print
-		DV2549DisplayMeasurementResults();
-		// Cleanup
-		DV2549CleanUpMeasurementBuffers();
+		m_calcPhase=true;
+		if (realTime-m_lastMeasurement>JL_MEASURE_END_TIMEOUT)
+		{
+			// Finish
+			m_measurementRunning=false;
+			m_calcPhase=false;
+			// Calc
+			DV2549CalcRTTMeasurements();		
+			DV2549CalcEndEndDelayMeasurements();
+			DV2549CalcPacketVolMeasurements();
+			DV2549CalcJitterMeasurements();
+			// Print
+			DV2549DisplayMeasurementResults();
+			common->Printf("\nid incoming pckt Loss: %f\n\n",GetIncomingPacketLoss());
+			// Cleanup
+			DV2549CleanUpMeasurementBuffers();
+		}
+		else
+		{
+			common->Printf("\nWaiting for stray data... %d",(int)((JL_MEASURE_END_TIMEOUT-(realTime-m_lastMeasurement))/1000.0f));
+		}
 	}
 
 }
@@ -1988,7 +2006,6 @@ void idAsyncClient::DV2549AddRoundTimeMeasure(const idBitMsg &msg)
 	{
 		int startTime = msg.ReadLong();
 		int rtt = Sys_Milliseconds()-startTime;
-		common->Printf("\nGot RTT! %d",rtt);
 		m_roundTripTimes.Append(rtt);
 		m_rttServerProcTimes.Append(msg.ReadLong());
 	}
@@ -2001,33 +2018,37 @@ idAsyncClient::DV2549SendRoundtripMsgFromClient
 */
 void idAsyncClient::DV2549SendRoundtripMsgFromClient(void)
 {
-	if (game->dv2549ProtocolTraced) common->Printf("\nDV2549_SND_ASY | Send Round Trip Message to server");
-	idBitMsg	msg;
-	byte		msgBuf[MAX_MESSAGE_SIZE];
-
-	if ( clientState < CS_CONNECTED ) {
-		return;
-	}
-
-	if ( m_lastRoundtripMsgTime > realTime ) {
-		m_lastRoundtripMsgTime = realTime;
-	}
-
-	if (realTime - m_lastRoundtripMsgTime < JL_MEASURE_SEND_TIME) 
+	if (m_measurementRunning)
 	{
-		return;
+		if (game->dv2549ProtocolTraced) common->Printf("\nDV2549_SND_ASY | Send Round Trip Message to server");
+		idBitMsg	msg;
+		byte		msgBuf[MAX_MESSAGE_SIZE];
+
+		if ( clientState < CS_CONNECTED ) {
+			return;
+		}
+
+		if ( m_lastRoundtripMsgTime > realTime ) {
+			m_lastRoundtripMsgTime = realTime;
+		}
+
+		if (realTime - m_lastRoundtripMsgTime < JL_MEASURE_SEND_TIME) 
+		{
+			return;
+		}
+
+		// send reliable client info to server
+		msg.Init( msgBuf, sizeof( msgBuf ) );
+		msg.WriteByte( CLIENT_RELIABLE_MESSAGE_ROUNDTRIPINIT);
+		msg.WriteLong(Sys_Milliseconds());
+		msg.WriteLong(1337); // padding as we'll receive two ints back
+
+		if ( !channel.SendReliableMessage( msg ) ) {
+			common->Error( "client->server reliable messages overflow\n" );
+		}
+
+		lastEmptyTime = realTime;
 	}
-
-	// send reliable client info to server
-	msg.Init( msgBuf, sizeof( msgBuf ) );
-	msg.WriteByte( CLIENT_RELIABLE_MESSAGE_ROUNDTRIPINIT);
-	msg.WriteLong(Sys_Milliseconds());
-
-	if ( !channel.SendReliableMessage( msg ) ) {
-		common->Error( "client->server reliable messages overflow\n" );
-	}
-
-	lastEmptyTime = realTime;
 }
 
 
@@ -2481,35 +2502,54 @@ int idAsyncClient::GetDownloadRequest( const int checksums[ MAX_PURE_PAKS ], int
 void idAsyncClient::DV2549DisplayMeasurementResults( void )
 {
 	common->Printf("\n\n================\nMeasurements\n================");
-	common->Printf("\nRTT: [ %f ms (Avg)]  - (%d samples)",m_rttResult,m_roundTripTimes.Num());
-	common->Printf("\nDelay: [ %f ms (Avg)]  - (%d samples)",m_delayResult,m_roundTripTimes.Num());
-	common->Printf("\nJitter: [ %f ms (Delay Standard Dev.) ]  - (%d samples)",m_jitterResult,1);
-	common->Printf("\nPkt Vol: [ %f prcnt (Avg) ]  - (%d samples)\n",m_packetVolResult,1);
+	common->Printf("\nRTT: [ %f ms (Avg)]  - (%d samples)",m_rttResultAvg,m_roundTripTimes.Num());
+	common->Printf("\nDelay: [ %f ms (Avg)]  - (%d samples)",m_delayResultAvg,m_roundTripTimes.Num());
+	common->Printf("\nJitter: [ %f ms (Delay Standard Dev.) ]  - (%d samples)",m_jitterResultSd,m_jitterWorkData.Num());
+	common->Printf("\nPkt Vol out: [ %f prcnt ]  - (%d samples)\n",m_packetVolResultPrcnt*100.0f,m_sentPacketLossChecks);
+	common->Printf("================\n\n");
 }
 
 void idAsyncClient::DV2549CalcRTTMeasurements( void )
 {
 	int aggregate = 0;
 	int samples=m_roundTripTimes.Num();
-	common->Printf("\nCalc RTT measurements...");
+	common->Printf("\n\nCalc RTT measurements...");
 	common->Printf("\nSamples: %d",samples);
 	for (int i=0;i<samples;i++)
 	{
 		int dat=m_roundTripTimes[i];
 		aggregate+=dat;
 	}
-	m_rttResult = ((float)aggregate)/((float)samples);	
-	common->Printf("\nRTT result: %f",m_rttResult);
+	m_rttResultAvg = ((float)aggregate)/((float)samples);	
+	common->Printf("\nRTT result: %f",m_rttResultAvg);
 }
 
 void idAsyncClient::DV2549CalcPacketVolMeasurements( void )
 {
-
+	float volume=((float)m_packetLossCheckAcks)/((float)m_sentPacketLossChecks);
+	m_packetVolResultPrcnt = volume;
 }
 
 void idAsyncClient::DV2549CalcJitterMeasurements( void )
 {
-
+	// the average is m_delayResultAvg
+	float avg=m_delayResultAvg;
+	float accumulatedDiffs=0.0f;
+	float standardDeviation=0.0f;
+	int samples = m_jitterWorkData.Num();
+	common->Printf("\n\nCalc jitter measurements...");
+	common->Printf("\nSamples: %d",samples);
+	// Calculate standard deviation
+	for (int i=0;i<samples;i++)
+	{
+		float diff = (m_jitterWorkData[i]-avg);
+		diff=diff*diff;
+		accumulatedDiffs+=diff;
+	}
+	common->Printf("\nAccumulated differences from mean: %f",accumulatedDiffs);
+	standardDeviation = idMath::Sqrt(accumulatedDiffs/(float)samples);
+	m_jitterResultSd = standardDeviation;
+	common->Printf("\njitter result: %f",m_jitterResultSd);
 }
 
 void idAsyncClient::DV2549CalcEndEndDelayMeasurements( void )
@@ -2519,7 +2559,7 @@ void idAsyncClient::DV2549CalcEndEndDelayMeasurements( void )
 	float dbgAggregateClientProc = 0;
 	float dbgAggregateServerProc = 0;
 	int samples=m_roundTripTimes.Num();
-	common->Printf("\nCalc End-to-End Delay measurements...");
+	common->Printf("\n\nCalc End-to-End Delay measurements...");
 	common->Printf("\nSamples: %d",samples);
 	for (int i=0;i<samples;i++)
 	{
@@ -2529,7 +2569,8 @@ void idAsyncClient::DV2549CalcEndEndDelayMeasurements( void )
 		dbgAggregateServerProc += srvProcDat;
 		float dbgDat = (float)(m_roundTripTimes[i])*0.5f;
 		// The formula
-		float dat=(float)(m_roundTripTimes[i]-srvProcDat)*0.5f-(float)clProcDat;
+		float dat=(float)(m_roundTripTimes[i])*0.5f-(float)clProcDat-(float)srvProcDat;
+		m_jitterWorkData.Append(dat);
 		//
 		aggregate+=dat;
 		dbgAggregate+=dbgDat;
@@ -2537,22 +2578,73 @@ void idAsyncClient::DV2549CalcEndEndDelayMeasurements( void )
 	float clientProcAvg = ((float)dbgAggregateClientProc)/((float)samples);	
 	float srvProcAvg = ((float)dbgAggregateServerProc)/((float)samples);	
 	float naiveDelay = dbgAggregate/((float)samples);	
-	m_delayResult = aggregate/((float)samples);	
+	m_delayResultAvg = aggregate/((float)samples);	
 	common->Printf("\nAvg client proc time result: %f ms",clientProcAvg);
 	common->Printf("\nAvg server proc time result: %f ms",srvProcAvg);
 	common->Printf("\nEE delay result(including proc times): %f",naiveDelay);
-	common->Printf("\nEE delay result: %f",m_delayResult);
+	common->Printf("\nEE delay result: %f",m_delayResultAvg);
 }
 
 void idAsyncClient::DV2549CleanUpMeasurementBuffers( void )
 {
 	common->Printf("\nCleaning up measurement buffers.");
 	m_measurementRunning=false;
-	m_rttResult=0.0f;
-	m_delayResult=0.0f;
-	m_jitterResult=0.0f;
-	m_packetVolResult=0.0f;
+	m_calcPhase=false;
+	m_lastMeasurement=0;
+	m_sentPacketLossChecks=0;
+	m_packetLossCheckAcks=0;
+	m_rttResultAvg=0.0f;
+	m_delayResultAvg=0.0f;
+	m_jitterResultSd=0.0f;
+	m_packetVolResultPrcnt=0.0f;
 	m_roundTripTimes.Clear();
 	m_rttServerProcTimes.Clear();
 	m_rttClientProcTimes.Clear();
+	m_jitterWorkData.Clear();
+}
+
+void idAsyncClient::DV2549SendPacketLossCheckMsgFromClient( void )
+{
+	if (m_measurementRunning)
+	{
+		if (game->dv2549ProtocolTraced) common->Printf("\nDV2549_SND_ASY | Send packet loss check");
+		idBitMsg	msg;
+		byte		msgBuf[MAX_MESSAGE_SIZE];
+
+		if ( m_lastPkgLossMsgTime > realTime ) {
+			m_lastPkgLossMsgTime = realTime;
+		}
+
+		if (realTime - m_lastPkgLossMsgTime < JL_PKGLOSS_SEND_TIME ) 
+		{
+			return;
+		}
+
+
+		msg.Init( msgBuf, sizeof( msgBuf ) );
+		msg.WriteLong( serverMessageSequence );
+		msg.WriteLong( gameInitId );
+		msg.WriteLong( snapshotSequence );
+		msg.WriteByte( CLIENT_UNRELIABLE_MESSAGE_PKGLOSSCHECK );
+		msg.WriteLong(1337);  // 32 bit
+		msg.WriteLong(12345); // 64 bit
+		msg.WriteLong(99999); // 96 bit
+		msg.WriteLong(888);   // 128 bit
+
+		channel.SendMessage( clientPort, clientTime, msg );
+		while( channel.UnsentFragmentsLeft() ) {
+			channel.SendNextFragment( clientPort, clientTime );
+		}
+
+		m_sentPacketLossChecks++;
+		m_lastPkgLossMsgTime = realTime;
+	}
+}
+
+void idAsyncClient::DV2549AddPacketVolumeAck()
+{
+	if (m_measurementRunning)
+	{
+		m_packetLossCheckAcks++;
+	}
 }

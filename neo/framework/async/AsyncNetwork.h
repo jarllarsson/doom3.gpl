@@ -97,6 +97,7 @@ enum {
 	// ##########################################
 	// CUSTOM BY JARL LARSSON
 	SERVER_RELIABLE_MESSAGE_ROUNDTRIPCONCLUDE,
+	SERVER_RELIABLE_MESSAGE_PKGLOSSMSGACK,
 };
 
 // unreliable client -> server messages
@@ -106,7 +107,7 @@ enum {
 	CLIENT_UNRELIABLE_MESSAGE_USERCMD,
 	// ##########################################
 	// CUSTOM BY JARL LARSSON
-	CLIENT_UNRELIABLE_MESSAGE_CUSTOM,
+	CLIENT_UNRELIABLE_MESSAGE_PKGLOSSCHECK,
 };
 
 // reliable client -> server messages
