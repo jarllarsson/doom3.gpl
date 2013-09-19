@@ -129,6 +129,10 @@ typedef struct serverClient_s {
 
 
 class idAsyncServer {
+private:
+	// #####################################
+	// ADDED BY JARL LARSSON
+	void				DV2549RespondRoundtripMsg( int clientNum, const idBitMsg &msg, int p_serverRcvTimestamp );
 public:
 						idAsyncServer();
 

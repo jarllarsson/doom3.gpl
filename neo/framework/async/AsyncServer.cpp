@@ -1349,6 +1349,7 @@ idAsyncServer::ProcessReliableClientMessages
 ==================
 */
 void idAsyncServer::ProcessReliableClientMessages( int clientNum ) {
+	int			procStartTimestamp=Sys_Milliseconds();
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 	byte		id;
@@ -1379,6 +1380,12 @@ void idAsyncServer::ProcessReliableClientMessages( int clientNum ) {
 			case CLIENT_RELIABLE_MESSAGE_PURE: {
 				// we get this message once the client has successfully updated it's pure list
 				ProcessReliablePure( clientNum, msg );
+				break;
+			}
+			// ADDED BY JARL LARSSON
+			// Message for round trip measure
+			case CLIENT_RELIABLE_MESSAGE_ROUNDTRIPINIT: {
+				DV2549RespondRoundtripMsg(clientNum, msg, procStartTimestamp);
 				break;
 			}
 			default: {
@@ -2389,7 +2396,8 @@ void idAsyncServer::RunFrame( void ) {
 		ProcessConnectionLessMessages();
 		return;
 	}
-	
+
+
 	gameTimeResidual += msec;
 
 	// spin in place processing incoming packets until enough time lapsed to run a new game frame
@@ -2821,5 +2829,34 @@ void idAsyncServer::ProcessDownloadRequestMessage( const netadr_t from, const id
 		common->DPrintf( "download request: download %d paks, %d bytes\n", numActualPaks, totalDlSize );
 
 		serverPort.SendPacket( from, outMsg.GetData(), outMsg.GetSize() );
+	}
+}
+
+// BY JARL LARSSON
+// SEND BACK START TIME
+void idAsyncServer::DV2549RespondRoundtripMsg( int clientNum, const idBitMsg &msg, int p_serverRcvTimestamp )
+{
+	//SendPrintToClient(clientNum,"GOT ROUNDTRIP FROM SERVER!!");
+	int			i;
+	idBitMsg	outMsg;
+	byte		msgBuf[MAX_MESSAGE_SIZE];
+
+	outMsg.Init( msgBuf, sizeof( msgBuf ) );
+	outMsg.WriteByte( SERVER_RELIABLE_MESSAGE_ROUNDTRIPCONCLUDE);
+	outMsg.WriteLong( msg.ReadLong() );
+	outMsg.WriteLong( Sys_Milliseconds()-realTime);
+
+	if ( clientNum >= 0 && clientNum < MAX_ASYNC_CLIENTS ) {
+		if ( clients[clientNum].clientState == SCS_INGAME ) {
+			SendReliableMessage( clientNum, outMsg );
+		}
+		return;
+	}
+
+	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
+		if ( clients[i].clientState != SCS_INGAME ) {
+			continue;
+		}
+		SendReliableMessage( i, outMsg );
 	}
 }

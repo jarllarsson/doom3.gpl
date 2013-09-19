@@ -77,9 +77,37 @@ class idAsyncClient {
 private:
 	// #####################
 	// BY JARL LARSSON
-	void				DV2549MeasureSystem(void);
-	void				DV2549AddRoundTimeMeasure(void);
-	idList<float>		m_roundTripTimes;
+	// Client running measure system update func
+	void				DV2549RunMeasureSystem(void);
+	void				DV2549DisplayMeasurementResults(void);
+	//
+	void				DV2549CalcRTTMeasurements(void);
+	void				DV2549CalcPacketVolMeasurements(void);
+	void				DV2549CalcJitterMeasurements(void);
+	void				DV2549CalcEndEndDelayMeasurements(void);
+	//
+	void				DV2549CleanUpMeasurementBuffers(void);
+
+	// Add a round trip measurement to list
+	void				DV2549AddRoundTimeMeasure(const idBitMsg &msg);
+
+	// Send round trip message from client to server
+	void				DV2549SendRoundtripMsgFromClient(void);
+
+	// cust data
+	idList<int>			m_roundTripTimes; // all measured round trip times
+	idList<int>			m_rttServerProcTimes;
+	idList<int>			m_rttClientProcTimes;
+	int					m_lastRoundtripMsgTime; // last time a roundtrip message was sent
+	bool				m_measurementRunning;
+
+	// final data
+	float				m_rttResult;
+	float				m_delayResult;
+	float				m_jitterResult;
+	float				m_packetVolResult;
+
+
 public:
 						idAsyncClient();
 
