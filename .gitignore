@@ -34,3 +34,8 @@ doomkey
 xpkey
 *.spec
 /build/Win32/Release/base/*.txt
+
+STEAM_doomkey
+maps
+savegames
+STEAM_xpkey
